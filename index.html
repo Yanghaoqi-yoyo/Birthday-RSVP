@@ -1,0 +1,1002 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>百岁华诞·寿宴邀请函</title>
+  <style>
+    /* ===== 全局重置 ===== */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --red:        #C0392B;
+      --deep:       #7A0000;
+      --gold:       #D4A017;
+      --light-gold: #F5D87A;
+      --cream:      #FFF5E6;
+      --text:       #6B0A0A;
+      --text-sub:   #9B3030;
+      --bg:         #5A0000;
+    }
+
+    html { font-size: 16px; }
+    body {
+      background: var(--bg);
+      font-family: "PingFang SC", "苹方", -apple-system, "Helvetica Neue", sans-serif;
+      color: var(--text);
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* ===== 烟花动画 Canvas ===== */
+    #fireworks-canvas {
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    /* ===== 主容器 ===== */
+    .page-wrapper {
+      position: relative;
+      z-index: 1;
+      max-width: 520px;
+      margin: 0 auto;
+      padding: 0 0 60px;
+    }
+
+    /* ===== 顶部封面 ===== */
+    .cover {
+      position: relative;
+      background: linear-gradient(160deg, #8B0000 0%, #C0392B 40%, #8B0000 100%);
+      padding: 50px 20px 60px;
+      text-align: center;
+      overflow: hidden;
+    }
+    .cover::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background-image:
+        radial-gradient(ellipse at 10% 10%, rgba(212,160,23,0.18) 0%, transparent 60%),
+        radial-gradient(ellipse at 90% 90%, rgba(212,160,23,0.18) 0%, transparent 60%);
+    }
+
+    /* 祥云装饰 */
+    .cloud-row {
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 60px;
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-around;
+      overflow: hidden;
+    }
+    .cloud-row.bottom {
+      top: auto; bottom: 0;
+      align-items: flex-end;
+    }
+    .cloud-svg { width: 80px; opacity: 0.35; }
+
+    /* 寿字大标题 */
+    .shou-title {
+      position: relative;
+      z-index: 1;
+      margin: 16px 0 10px;
+    }
+    .shou-char {
+      font-size: 4.2rem;
+      font-weight: bold;
+      color: var(--light-gold);
+      text-shadow:
+        0 0 16px rgba(212,160,23,0.8),
+        0 0 32px rgba(212,160,23,0.4),
+        2px 2px 0 rgba(0,0,0,0.3);
+      display: inline-block;
+      animation: glow 2.5s ease-in-out infinite alternate;
+      line-height: 1;
+    }
+
+    /* 诚挚邀请语 */
+    .cover-invite {
+      position: relative;
+      z-index: 1;
+      margin-top: 14px;
+      font-size: 0.95rem;
+      color: rgba(255,240,200,0.9);
+      letter-spacing: 0.12em;
+      line-height: 1.9;
+    }
+    .cover-invite .invite-name {
+      font-size: 1.05rem;
+      color: var(--light-gold);
+      font-weight: bold;
+    }
+
+    @keyframes glow {
+      from { text-shadow: 0 0 20px rgba(212,160,23,0.8), 0 0 40px rgba(212,160,23,0.4), 3px 3px 0 rgba(0,0,0,0.3); }
+      to   { text-shadow: 0 0 30px rgba(255,220,100,1),  0 0 60px rgba(212,160,23,0.6), 3px 3px 0 rgba(0,0,0,0.3); }
+    }
+    @keyframes shimmer {
+      0%,100% { opacity: 1; }
+      50%      { opacity: 0.75; }
+    }
+
+    .cover-subtitle {
+      position: relative;
+      z-index: 1;
+      color: var(--light-gold);
+      font-size: 1.35rem;
+      letter-spacing: 0.25em;
+      margin-top: 6px;
+      text-shadow: 0 1px 4px rgba(0,0,0,0.5);
+    }
+
+    .cover-date-badge {
+      position: relative;
+      z-index: 1;
+      display: inline-block;
+      margin-top: 20px;
+      border: 2px solid var(--gold);
+      border-radius: 6px;
+      padding: 8px 28px;
+      background: rgba(0,0,0,0.25);
+    }
+    .cover-date-badge .year { font-size: 1rem; color: var(--light-gold); letter-spacing: 0.15em; }
+    .cover-date-badge .date-main { font-size: 1.6rem; color: #fff; font-weight: bold; letter-spacing: 0.1em; }
+
+    /* ===== 内容卡片 ===== */
+    .card {
+      background: #FFF5E6;
+      margin: 0 16px 20px;
+      border-radius: 12px;
+      padding: 28px 24px;
+      position: relative;
+      box-shadow: 0 4px 24px rgba(90,0,0,0.35);
+      border: 1px solid rgba(212,160,23,0.45);
+    }
+    .card::before, .card::after {
+      content: '❧';
+      position: absolute;
+      color: var(--gold);
+      font-size: 1.1rem;
+      opacity: 0.6;
+    }
+    .card::before { top: 10px; left: 14px; }
+    .card::after  { bottom: 10px; right: 14px; transform: rotate(180deg); }
+
+    /* 第一张卡：诗意引言 */
+    .intro-card {
+      text-align: center;
+      background: linear-gradient(135deg, #FFF5E6 0%, #FFF0D8 100%);
+    }
+    .intro-card .poem {
+      font-size: 1.08rem;
+      line-height: 2.4;
+      color: var(--deep);
+      border-left: 3px solid var(--gold);
+      border-right: 3px solid var(--gold);
+      padding: 14px 18px;
+      margin: 0 8px;
+      letter-spacing: 0.05em;
+    }
+
+    /* ===== 分节标题 ===== */
+    .section-title {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 1.1rem;
+      font-weight: bold;
+      color: var(--deep);
+      margin-bottom: 18px;
+      letter-spacing: 0.1em;
+    }
+    .section-title::before,
+    .section-title::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: linear-gradient(to right, transparent, var(--gold), transparent);
+    }
+
+    /* ===== 活动信息 ===== */
+    .info-list { display: flex; flex-direction: column; gap: 10px; }
+    .info-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 14px;
+      padding: 14px 16px;
+      border-radius: 10px;
+      border-left: 3px solid var(--gold);
+    }
+    .info-item:nth-child(odd)  { background: linear-gradient(135deg, rgba(255,240,210,0.9) 0%, rgba(255,248,230,0.7) 100%); }
+    .info-item:nth-child(even) { background: linear-gradient(135deg, rgba(255,228,196,0.6) 0%, rgba(250,220,190,0.5) 100%); }
+    .info-icon {
+      font-size: 1.1rem;
+      line-height: 1;
+      color: var(--gold);
+      flex-shrink: 0;
+      margin-top: 3px;
+      font-weight: bold;
+      min-width: 22px;
+      text-align: center;
+    }
+    .info-label { font-size: 0.78rem; color: var(--text-sub); margin-bottom: 3px; opacity: 0.85; letter-spacing: 0.05em; }
+    .info-value { font-size: 1.05rem; color: var(--deep); font-weight: bold; line-height: 1.4; }
+    .info-sub   { font-size: 0.86rem; color: var(--text-sub); margin-top: 4px; line-height: 1.65; }
+
+    /* ===== 地图 ===== */
+    .map-card { padding: 20px; }
+    #map-container {
+      width: 100%; height: 220px;
+      border-radius: 8px;
+      overflow: hidden;
+      border: 2px solid rgba(212,160,23,0.4);
+    }
+    .map-nav-btn {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      margin-top: 14px;
+      background: linear-gradient(135deg, var(--red), var(--deep));
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      padding: 12px;
+      font-size: 1rem;
+      font-family: inherit;
+      cursor: pointer;
+      width: 100%;
+      text-decoration: none;
+      font-weight: bold;
+      letter-spacing: 0.1em;
+      transition: opacity 0.2s;
+    }
+    .map-nav-btn:hover { opacity: 0.88; }
+
+    /* ===== 表单 ===== */
+    .form-card { background: linear-gradient(135deg, #FFF5E6 0%, #FFF0D8 100%); }
+
+    .form-group { margin-bottom: 20px; }
+    .form-label {
+      display: block;
+      font-size: 0.9rem;
+      color: var(--deep);
+      margin-bottom: 8px;
+      font-weight: bold;
+    }
+    .form-label span { color: var(--red); margin-left: 2px; }
+
+    .form-input {
+      width: 100%;
+      padding: 12px 14px;
+      border: 1.5px solid rgba(122,0,0,0.25);
+      border-radius: 8px;
+      font-size: 1rem;
+      font-family: inherit;
+      background: #fff;
+      color: var(--deep);
+      transition: border-color 0.2s, box-shadow 0.2s;
+      outline: none;
+      -webkit-appearance: none;
+    }
+    .form-input:focus {
+      border-color: var(--red);
+      box-shadow: 0 0 0 3px rgba(192,57,43,0.12);
+    }
+
+    .count-selector {
+      display: flex;
+      align-items: center;
+      gap: 0;
+      border: 1.5px solid rgba(192,57,43,0.3);
+      border-radius: 8px;
+      overflow: hidden;
+      background: #fff;
+    }
+    .count-btn {
+      width: 48px; height: 48px;
+      background: var(--red);
+      color: #fff;
+      border: none;
+      font-size: 1.4rem;
+      cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      transition: background 0.2s;
+      flex-shrink: 0;
+    }
+    .count-btn:hover { background: var(--deep); }
+    .count-display {
+      flex: 1;
+      text-align: center;
+      font-size: 1.3rem;
+      font-weight: bold;
+      color: var(--deep);
+    }
+
+    .attend-options {
+      display: flex;
+      gap: 12px;
+    }
+    .attend-option { flex: 1; }
+    .attend-option input[type="radio"] { display: none; }
+    .attend-option label {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      padding: 12px 8px;
+      border: 1.5px solid rgba(192,57,43,0.3);
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 0.95rem;
+      background: #fff;
+      transition: all 0.2s;
+      text-align: center;
+    }
+    .attend-option input[type="radio"]:checked + label {
+      background: var(--red);
+      border-color: var(--red);
+      color: #fff;
+      box-shadow: 0 2px 8px rgba(192,57,43,0.3);
+    }
+    .attend-option label .emoji { font-size: 1.2rem; }
+
+    .submit-btn {
+      width: 100%;
+      padding: 15px;
+      background: linear-gradient(135deg, #C0392B, #8B0000);
+      color: #FFE97F;
+      border: none;
+      border-radius: 10px;
+      font-size: 1.1rem;
+      font-family: inherit;
+      font-weight: bold;
+      letter-spacing: 0.2em;
+      cursor: pointer;
+      transition: all 0.2s;
+      box-shadow: 0 4px 15px rgba(192,57,43,0.4);
+      position: relative;
+      overflow: hidden;
+    }
+    .submit-btn:hover { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(192,57,43,0.5); }
+    .submit-btn:active { transform: translateY(0); }
+    .submit-btn::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(135deg, transparent 30%, rgba(255,255,255,0.1) 50%, transparent 70%);
+    }
+
+    /* ===== 感谢弹窗 ===== */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.7);
+      z-index: 1000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      opacity: 0;
+      visibility: hidden;
+      transition: opacity 0.35s, visibility 0.35s;
+    }
+    .modal-overlay.show { opacity: 1; visibility: visible; }
+    .modal-box {
+      background: linear-gradient(160deg, #FDF6E3, #FFF8E7);
+      border-radius: 16px;
+      padding: 36px 28px;
+      text-align: center;
+      max-width: 360px;
+      width: 100%;
+      border: 2px solid var(--gold);
+      box-shadow: 0 8px 40px rgba(0,0,0,0.5);
+      transform: scale(0.85);
+      transition: transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+    .modal-overlay.show .modal-box { transform: scale(1); }
+    .modal-shou {
+      font-size: 3.5rem;
+      animation: glow 2.5s ease-in-out infinite alternate;
+      display: block;
+      margin-bottom: 10px;
+    }
+    .modal-title {
+      font-size: 1.4rem;
+      color: var(--deep);
+      font-weight: bold;
+      margin-bottom: 12px;
+    }
+    .modal-msg {
+      font-size: 1rem;
+      line-height: 1.9;
+      color: var(--text);
+    }
+    .modal-close {
+      margin-top: 24px;
+      padding: 10px 36px;
+      background: var(--red);
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      font-size: 1rem;
+      font-family: inherit;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .modal-close:hover { background: var(--deep); }
+
+    /* ===== 页脚 ===== */
+    .footer {
+      text-align: center;
+      padding: 20px;
+      color: rgba(212,160,23,0.6);
+      font-size: 0.85rem;
+      letter-spacing: 0.15em;
+    }
+
+
+
+    /* ===== 浮动金色粒子 ===== */
+    .particles-layer {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      overflow: hidden;
+      z-index: 0;
+    }
+    .particle {
+      position: absolute;
+      width: 5px; height: 5px;
+      border-radius: 50%;
+      background: var(--light-gold);
+      opacity: 0;
+      animation: float-up var(--dur, 8s) var(--delay, 0s) linear infinite;
+    }
+    @keyframes float-up {
+      0%   { transform: translateY(110vh) translateX(0); opacity: 0; }
+      10%  { opacity: 0.6; }
+      90%  { opacity: 0.3; }
+      100% { transform: translateY(-10vh) translateX(var(--drift, 30px)); opacity: 0; }
+    }
+
+    /* 响应式微调 */
+    @media (max-width: 420px) {
+      .shou-char { font-size: 5rem; }
+      .card { margin: 0 10px 16px; padding: 22px 18px; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- 烟花 Canvas -->
+<canvas id="fireworks-canvas"></canvas>
+
+<!-- 浮动金粒子 -->
+<div class="particles-layer" id="particles-layer"></div>
+
+<div class="page-wrapper">
+
+  <!-- ===== 封面 ===== -->
+  <div class="cover">
+    <!-- 祥云顶部 -->
+    <div class="cloud-row">
+      <svg class="cloud-svg" viewBox="0 0 200 80" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M10 70 Q30 40 50 60 Q60 20 90 50 Q110 10 140 45 Q160 25 190 55 L190 80 L10 80 Z" fill="#F5D87A"/>
+        <path d="M10 70 Q30 50 50 65 Q65 35 95 55 Q115 20 145 50 Q165 30 190 55" stroke="#F5D87A" stroke-width="1.5" fill="none" opacity="0.5"/>
+      </svg>
+      <svg class="cloud-svg" viewBox="0 0 200 80" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M10 70 Q30 40 50 60 Q60 20 90 50 Q110 10 140 45 Q160 25 190 55 L190 80 L10 80 Z" fill="#F5D87A"/>
+      </svg>
+      <svg class="cloud-svg" viewBox="0 0 200 80" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M10 70 Q30 40 50 60 Q60 20 90 50 Q110 10 140 45 Q160 25 190 55 L190 80 L10 80 Z" fill="#F5D87A"/>
+      </svg>
+    </div>
+
+    <div class="shou-title">
+      <span class="shou-char">壽</span>
+    </div>
+    <div class="cover-subtitle">百 岁 华 诞 · 寿 宴 邀 请 函</div>
+
+    <div class="cover-invite">
+      谨以此函，诚挚邀请您<br/>
+      莅临共庆 <span class="invite-name">王巧云老夫人</span> 百岁华诞<br/>
+      见证这份难得的百年岁月之喜
+    </div>
+
+    <div class="cover-date-badge">
+      <div class="year">丙午年 · 国庆佳节</div>
+      <div class="date-main">2026年10月1日</div>
+    </div>
+
+    <!-- 祥云底部 -->
+    <div class="cloud-row bottom">
+      <svg class="cloud-svg" viewBox="0 0 200 80" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M10 10 Q30 40 50 20 Q60 60 90 30 Q110 70 140 35 Q160 55 190 25 L190 0 L10 0 Z" fill="#F5D87A"/>
+      </svg>
+      <svg class="cloud-svg" viewBox="0 0 200 80" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M10 10 Q30 40 50 20 Q60 60 90 30 Q110 70 140 35 Q160 55 190 25 L190 0 L10 0 Z" fill="#F5D87A"/>
+      </svg>
+      <svg class="cloud-svg" viewBox="0 0 200 80" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M10 10 Q30 40 50 20 Q60 60 90 30 Q110 70 140 35 Q160 55 190 25 L190 0 L10 0 Z" fill="#F5D87A"/>
+      </svg>
+    </div>
+  </div>
+
+  <!-- ===== 诗意引言 ===== -->
+  <div style="height:20px;background:linear-gradient(to bottom, #8B0000, #FFF5E6);"></div>
+
+  <div class="card intro-card" style="margin-top:0; border-radius:0 0 12px 12px;">
+    <div class="poem">
+      人间有味是清欢，岁月从容百年长<br/>
+      春秋更替情未改，笑看云舒与风淡
+    </div>
+  </div>
+
+  <!-- ===== 活动信息 ===== -->
+  <div class="card">
+    <div class="section-title">寿 宴 详 情</div>
+    <div class="info-list">
+
+      <div class="info-item">
+        <div class="info-icon">壽</div>
+        <div>
+          <div class="info-label">寿星</div>
+          <div class="info-value">王巧云老夫人 百岁华诞</div>
+        </div>
+      </div>
+
+      <div class="info-item">
+        <div class="info-icon">日</div>
+        <div>
+          <div class="info-label">日期</div>
+          <div class="info-value">2026年10月1日（国庆节）</div>
+          <div class="info-sub">国庆佳节 · 双喜临门</div>
+        </div>
+      </div>
+
+      <div class="info-item">
+        <div class="info-icon">时</div>
+        <div>
+          <div class="info-label">时间</div>
+          <div class="info-value">晚上 18:00 开席</div>
+          <div class="info-sub">请提前15分钟入场，17:45 前就位</div>
+        </div>
+      </div>
+
+      <div class="info-item">
+        <div class="info-icon">礼</div>
+        <div>
+          <div class="info-label">着装要求</div>
+          <div class="info-value">喜庆着装</div>
+          <div class="info-sub">请着喜庆颜色服饰出席</div>
+        </div>
+      </div>
+
+      <div class="info-item">
+        <div class="info-icon">址</div>
+        <div>
+          <div class="info-label">地点</div>
+          <div class="info-value">白金汉爵大酒店</div>
+          <div class="info-sub">上海市闵行区沪闵路1577号<br/>（大零号湾国际会议中心）</div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ===== 地图 ===== -->
+  <div class="card map-card">
+    <div class="section-title">场 地 地 图</div>
+    <div id="map-container">
+      <!-- 腾讯地图容器 -->
+    </div>
+    <a
+      class="map-nav-btn"
+      href="https://uri.amap.com/marker?position=121.399630,31.085570&name=白金汉爵大酒店（大零号湾）&src=workbuddy&coordinate=gaode&callnative=1"
+      target="_blank"
+      id="nav-btn"
+    >
+      ◎ &nbsp;点击导航前往
+    </a>
+    <div style="text-align:center;margin-top:8px;font-size:0.82rem;color:var(--text-sub);">
+      上海市闵行区沪闵路1577号 · 地铁剑川路1号口步行210米
+    </div>
+  </div>
+
+  <!-- ===== 回执表单 ===== -->
+  <div class="card form-card">
+    <div class="section-title">出 席 回 执</div>
+    <p style="text-align:center;color:var(--text-sub);font-size:0.92rem;margin-bottom:20px;line-height:1.8;">
+      承蒙厚爱，诚邀您共赴这份百年喜悦<br/>
+      请填写回执，方便我们为您安排席位
+    </p>
+
+    <form id="rsvp-form" novalidate>
+      <div class="form-group">
+        <label class="form-label" for="guest-name">
+          您的姓名 <span>*</span>
+        </label>
+        <input
+          type="text"
+          id="guest-name"
+          class="form-input"
+          placeholder="请输入您的姓名"
+          maxlength="20"
+          autocomplete="off"
+        />
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">
+          是否出席 <span>*</span>
+        </label>
+        <div class="attend-options">
+          <div class="attend-option">
+            <input type="radio" name="attend" id="attend-yes" value="yes" />
+            <label for="attend-yes">
+              <span class="emoji">☑️</span> 欣然出席
+            </label>
+          </div>
+          <div class="attend-option">
+            <input type="radio" name="attend" id="attend-no" value="no" />
+            <label for="attend-no">
+              <span class="emoji">😔</span> 遗憾缺席
+            </label>
+          </div>
+        </div>
+      </div>
+
+      <div class="form-group" id="count-group">
+        <label class="form-label">
+          出席人数 <span>*</span>
+        </label>
+        <div class="count-selector">
+          <button type="button" class="count-btn" id="count-minus">−</button>
+          <div class="count-display" id="count-display">1 人</div>
+          <button type="button" class="count-btn" id="count-plus">＋</button>
+        </div>
+        <div style="text-align:center;font-size:0.8rem;color:var(--text-sub);margin-top:6px;">
+          含您本人，请填写总出席人数
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="guest-note">
+          备注（可选）
+        </label>
+        <textarea
+          id="guest-note"
+          class="form-input"
+          placeholder="如有特殊饮食需求或其他备注，欢迎填写"
+          rows="3"
+          style="resize:none;"
+        ></textarea>
+      </div>
+
+      <button type="submit" class="submit-btn" id="submit-btn">
+        确认回执
+      </button>
+    </form>
+  </div>
+
+  <!-- 页脚 -->
+  <div class="footer">
+    ❦ 愿岁月静好，福寿绵长 ❦<br/>
+    <span style="font-size:0.75rem;opacity:0.6;">王巧云老夫人寿宴统筹小组 敬制</span>
+  </div>
+
+</div><!-- end page-wrapper -->
+
+
+<!-- ===== 感谢弹窗 ===== -->
+<div class="modal-overlay" id="thanks-modal">
+  <div class="modal-box">
+    <span class="modal-shou">🎊</span>
+    <div class="modal-title" id="modal-title">感谢您的回复！</div>
+    <div class="modal-msg" id="modal-msg"></div>
+    <button class="modal-close" onclick="closeModal()">我知道了</button>
+  </div>
+</div>
+
+
+<!-- ===== 腾讯地图 JS API ===== -->
+<script charset="utf-8" src="https://map.qq.com/api/gljs?v=1.exp&key=OB4BZ-D4W3U-B7VVO-4PJWW-6TKDJ-WPB77"></script>
+
+<script>
+// ============================================================
+//  地图初始化
+// ============================================================
+window.onload = function () {
+  initMap();
+  initParticles();
+  initFireworks();
+};
+
+function initMap() {
+  // 白金汉爵大酒店坐标（WGS84）
+  var center = new TMap.LatLng(31.08557, 121.39963);
+  var map = new TMap.Map('map-container', {
+    center: center,
+    zoom: 16,
+    viewMode: '2D',
+    mapStyleId: 'style1'
+  });
+
+  // 添加标记
+  new TMap.MultiMarker({
+    map: map,
+    styles: {
+      'custom': new TMap.MarkerStyle({
+        width: 36, height: 36,
+        anchor: { x: 18, y: 36 },
+        color: '#C0392B',
+        strokeColor: '#8B0000',
+        strokeWidth: 2
+      })
+    },
+    geometries: [{
+      id: 'hotel',
+      styleId: 'custom',
+      position: center,
+      properties: { title: '白金汉爵大酒店' }
+    }]
+  });
+
+  // 添加信息窗
+  var infoWindow = new TMap.InfoWindow({
+    map: map,
+    position: center,
+    offset: { x: 0, y: -42 },
+    content: '<div style="font-size:13px;padding:4px 8px;font-weight:bold;color:#8B0000;">🏨 白金汉爵大酒店<br/><span style=\"font-weight:normal;color:#666;\">沪闵路1577号</span></div>'
+  });
+}
+
+// ============================================================
+//  人数选择器
+// ============================================================
+var guestCount = 1;
+var attendValue = null;
+
+document.getElementById('count-minus').addEventListener('click', function () {
+  if (guestCount > 1) {
+    guestCount--;
+    updateCountDisplay();
+  }
+});
+document.getElementById('count-plus').addEventListener('click', function () {
+  if (guestCount < 20) {
+    guestCount++;
+    updateCountDisplay();
+  }
+});
+function updateCountDisplay() {
+  document.getElementById('count-display').textContent = guestCount + ' 人';
+}
+
+// 监听出席状态变化，控制人数选择器
+document.querySelectorAll('input[name="attend"]').forEach(function (radio) {
+  radio.addEventListener('change', function () {
+    attendValue = this.value;
+    var countGroup = document.getElementById('count-group');
+    if (attendValue === 'no') {
+      countGroup.style.opacity = '0.4';
+      countGroup.style.pointerEvents = 'none';
+    } else {
+      countGroup.style.opacity = '1';
+      countGroup.style.pointerEvents = 'auto';
+    }
+  });
+});
+
+// ============================================================
+//  Supabase 配置
+// ============================================================
+var SUPABASE_URL = 'https://hwfewyebxdmcruqbsptv.supabase.co';
+var SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imh3ZmV3eWVieGRtY3J1cWJzcHR2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM2NTUwOTcsImV4cCI6MjA4OTIzMTA5N30.owba0w4rTVYg5dydJPUQnR54iac-klsm9DbCW6kam40';
+
+// ============================================================
+//  表单提交
+// ============================================================
+document.getElementById('rsvp-form').addEventListener('submit', function (e) {
+  e.preventDefault();
+  var name    = document.getElementById('guest-name').value.trim();
+  var note    = document.getElementById('guest-note').value.trim();
+  var attend  = document.querySelector('input[name="attend"]:checked');
+
+  // 验证
+  if (!name) {
+    showToast('请输入您的姓名 🙏');
+    document.getElementById('guest-name').focus();
+    return;
+  }
+  if (!attend) {
+    showToast('请选择是否出席 🙏');
+    return;
+  }
+
+  var record = {
+    name: name,
+    attend: attend.value,
+    count: attend.value === 'yes' ? guestCount : 0,
+    note: note
+  };
+
+  var btn = document.getElementById('submit-btn');
+  btn.disabled = true;
+  btn.textContent = '提交中...';
+
+  // 提交到 Supabase
+  fetch(SUPABASE_URL + '/rest/v1/rsvp', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'apikey': SUPABASE_KEY,
+      'Authorization': 'Bearer ' + SUPABASE_KEY,
+      'Prefer': 'return=minimal'
+    },
+    body: JSON.stringify(record)
+  })
+  .then(function(res) {
+    if (!res.ok) throw new Error('提交失败');
+    // 显示感谢弹窗
+    showThanksModal(record);
+    btn.textContent = '✓ 已提交回执';
+    btn.style.background = 'linear-gradient(135deg, #27ae60, #1e8449)';
+  })
+  .catch(function() {
+    showToast('提交失败，请检查网络后重试');
+    btn.disabled = false;
+    btn.textContent = '确认回执';
+  });
+});
+
+function showThanksModal(record) {
+  var title = document.getElementById('modal-title');
+  var msg   = document.getElementById('modal-msg');
+
+  if (record.attend === 'yes') {
+    title.textContent = '谢谢您，' + record.name + ' 🎊';
+    msg.innerHTML =
+      '您已确认出席，共 <strong>' + record.count + '</strong> 位<br/><br/>' +
+      '王巧云老夫人和全家人都期待着与您共庆这份百年喜悦！<br/><br/>' +
+      '<span style="color:#C0392B;font-weight:bold;">感恩您的赏光，我们届时恭候！</span><br/><br/>' +
+      '📍 沪闵路1577号 白金汉爵大酒店<br/>' +
+      '📅 2026年10月1日 18:00 开席（17:45 前就位）';
+  } else {
+    title.textContent = record.name + '，感谢您的回复';
+    msg.innerHTML =
+      '非常遗憾您未能出席，<br/>但心意我们已收到 💝<br/><br/>' +
+      '愿您阖家平安幸福，<br/>后会有期，再聚时畅叙情谊！<br/><br/>' +
+      '<span style="color:#C0392B;font-weight:bold;">感谢您的惦记，王巧云老夫人感怀于心！</span>';
+  }
+
+  document.getElementById('thanks-modal').classList.add('show');
+
+  // 出席时触发烟花
+  if (record.attend === 'yes') {
+    triggerFireworks();
+  }
+}
+
+function closeModal() {
+  document.getElementById('thanks-modal').classList.remove('show');
+}
+
+// Toast 提示
+function showToast(msg) {
+  var t = document.createElement('div');
+  t.textContent = msg;
+  Object.assign(t.style, {
+    position: 'fixed', bottom: '80px', left: '50%',
+    transform: 'translateX(-50%)',
+    background: 'rgba(0,0,0,0.75)', color: '#fff',
+    padding: '10px 20px', borderRadius: '20px',
+    fontSize: '14px', zIndex: '9999',
+    whiteSpace: 'nowrap'
+  });
+  document.body.appendChild(t);
+  setTimeout(function(){ t.remove(); }, 2500);
+}
+
+// ============================================================
+//  浮动金色粒子
+// ============================================================
+function initParticles() {
+  var layer = document.getElementById('particles-layer');
+  for (var i = 0; i < 25; i++) {
+    var p = document.createElement('div');
+    p.className = 'particle';
+    var left = Math.random() * 100;
+    var dur  = 7 + Math.random() * 8;
+    var delay = Math.random() * 10;
+    var drift = (Math.random() - 0.5) * 80;
+    var size  = 3 + Math.random() * 5;
+    p.style.cssText =
+      'left:' + left + '%;' +
+      '--dur:' + dur + 's;' +
+      '--delay:' + delay + 's;' +
+      '--drift:' + drift + 'px;' +
+      'width:' + size + 'px;height:' + size + 'px;';
+    layer.appendChild(p);
+  }
+}
+
+// ============================================================
+//  烟花动画
+// ============================================================
+var canvas, ctx, fireworksList = [], particlesList = [];
+var fireworksRunning = false;
+
+function initFireworks() {
+  canvas = document.getElementById('fireworks-canvas');
+  ctx = canvas.getContext('2d');
+  resizeCanvas();
+  window.addEventListener('resize', resizeCanvas);
+}
+
+function resizeCanvas() {
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+}
+
+function triggerFireworks() {
+  if (fireworksRunning) return;
+  fireworksRunning = true;
+  for (var i = 0; i < 6; i++) {
+    setTimeout(launchFirework, i * 400);
+  }
+  setTimeout(function () { fireworksRunning = false; }, 4000);
+  requestAnimationFrame(animateFireworks);
+}
+
+function launchFirework() {
+  var x = Math.random() * canvas.width;
+  var y = Math.random() * canvas.height * 0.5;
+  var colors = ['#FFE97F','#FF6B6B','#FFD700','#FF4444','#FFAA00','#FF8C00'];
+  var color = colors[Math.floor(Math.random() * colors.length)];
+  for (var i = 0; i < 60; i++) {
+    var angle = (Math.PI * 2 / 60) * i;
+    var speed = 2 + Math.random() * 4;
+    particlesList.push({
+      x: x, y: y,
+      vx: Math.cos(angle) * speed,
+      vy: Math.sin(angle) * speed,
+      color: color,
+      alpha: 1,
+      size: 2 + Math.random() * 2
+    });
+  }
+}
+
+function animateFireworks() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  particlesList = particlesList.filter(function(p) {
+    p.x  += p.vx;
+    p.y  += p.vy + 0.05;
+    p.vy += 0.06;
+    p.alpha -= 0.018;
+    if (p.alpha <= 0) return false;
+    ctx.save();
+    ctx.globalAlpha = p.alpha;
+    ctx.fillStyle = p.color;
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+    return true;
+  });
+  if (particlesList.length > 0) {
+    requestAnimationFrame(animateFireworks);
+  } else {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+  }
+}
+</script>
+
+</body>
+</html>
