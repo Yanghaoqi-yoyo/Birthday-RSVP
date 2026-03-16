@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>寿宴回执后台 · 管理员查看</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --red:   #C0392B;
+      --deep:  #8B0000;
+      --gold:  #D4A017;
+      --cream: #FDF6E3;
+      --green: #27ae60;
+    }
+    body {
+      font-family: "PingFang SC", "苹方", -apple-system, "Helvetica Neue", sans-serif;
+      background: #f5f5f5;
+      color: #333;
+      min-height: 100vh;
+    }
+
+    /* Header */
+    .header {
+      background: linear-gradient(135deg, var(--deep), var(--red));
+      color: #FFE97F;
+      padding: 20px 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+    }
+    .header h1 { font-size: 1.25rem; }
+    .header-sub { font-size: 0.8rem; opacity: 0.75; margin-top: 2px; }
+
+    /* Summary Cards */
+    .stats-row {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 16px;
+      padding: 20px 20px 0;
+    }
+    @media (max-width: 600px) {
+      .stats-row { grid-template-columns: repeat(2, 1fr); }
+    }
+    .stat-card {
+      background: #fff;
+      border-radius: 10px;
+      padding: 16px;
+      text-align: center;
+      box-shadow: 0 1px 6px rgba(0,0,0,0.08);
+      border-top: 3px solid var(--gold);
+    }
+    .stat-card.green  { border-top-color: var(--green); }
+    .stat-card.red    { border-top-color: var(--red); }
+    .stat-card.blue   { border-top-color: #2980b9; }
+    .stat-num  { font-size: 2rem; font-weight: bold; color: #333; }
+    .stat-label{ font-size: 0.82rem; color: #888; margin-top: 4px; }
+
+    /* Toolbar */
+    .toolbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 16px 20px 8px;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+    .toolbar h2 { font-size: 1rem; color: #555; }
+    .btn {
+      padding: 8px 16px;
+      border-radius: 6px;
+      border: none;
+      cursor: pointer;
+      font-size: 0.88rem;
+      font-family: inherit;
+      transition: opacity 0.2s;
+    }
+    .btn:hover { opacity: 0.82; }
+    .btn-primary { background: var(--red); color: #fff; }
+    .btn-success { background: var(--green); color: #fff; }
+    .btn-danger  { background: #e74c3c; color: #fff; }
+    .btn-default { background: #ddd; color: #555; }
+
+    /* Table */
+    .table-wrap {
+      margin: 0 20px 30px;
+      background: #fff;
+      border-radius: 10px;
+      box-shadow: 0 1px 6px rgba(0,0,0,0.08);
+      overflow: hidden;
+    }
+    table { width: 100%; border-collapse: collapse; }
+    th {
+      background: linear-gradient(to bottom, #f9f9f9, #f0f0f0);
+      font-size: 0.82rem;
+      color: #666;
+      font-weight: 600;
+      padding: 12px 14px;
+      text-align: left;
+      border-bottom: 1px solid #e8e8e8;
+      white-space: nowrap;
+    }
+    td {
+      padding: 13px 14px;
+      font-size: 0.9rem;
+      border-bottom: 1px solid #f2f2f2;
+      vertical-align: middle;
+    }
+    tr:last-child td { border-bottom: none; }
+    tr:hover td { background: #fafafa; }
+    .badge {
+      display: inline-block;
+      padding: 3px 10px;
+      border-radius: 12px;
+      font-size: 0.78rem;
+      font-weight: bold;
+    }
+    .badge-yes { background: #d5f0e0; color: #1e8449; }
+    .badge-no  { background: #fde8e8; color: #c0392b; }
+
+    /* Loading */
+    .loading-state {
+      padding: 60px 20px;
+      text-align: center;
+      color: #aaa;
+    }
+    .spinner {
+      width: 36px; height: 36px;
+      border: 3px solid #eee;
+      border-top-color: var(--red);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+      margin: 0 auto 16px;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* Empty state */
+    .empty-state {
+      padding: 60px 20px;
+      text-align: center;
+      color: #aaa;
+    }
+    .empty-state .icon { font-size: 3rem; margin-bottom: 12px; }
+    .empty-state p { font-size: 0.95rem; line-height: 1.7; }
+
+    /* Export hint */
+    .export-tip {
+      margin: 0 20px 12px;
+      padding: 10px 14px;
+      background: #fff8e1;
+      border-left: 3px solid var(--gold);
+      border-radius: 4px;
+      font-size: 0.82rem;
+      color: #7d6608;
+    }
+
+    /* Status bar */
+    .status-bar {
+      margin: 12px 20px 0;
+      padding: 10px 14px;
+      background: #e8f4fd;
+      border-left: 3px solid #2980b9;
+      border-radius: 4px;
+      font-size: 0.82rem;
+      color: #1a6694;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .status-dot {
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      background: #27ae60;
+      flex-shrink: 0;
+    }
+    .status-dot.error { background: #e74c3c; }
+  </style>
+</head>
+<body>
+
+<div class="header">
+  <div>
+    <div style="font-size:0.9rem;opacity:0.8;margin-bottom:4px;">🏮 王巧云老夫人百岁寿宴</div>
+    <h1>出席回执管理后台</h1>
+    <div class="header-sub">2026年10月1日 · 白金汉爵大酒店</div>
+  </div>
+  <div style="font-size:1.8rem;">👵</div>
+</div>
+
+<!-- 状态栏 -->
+<div class="status-bar" id="status-bar">
+  <div class="status-dot" id="status-dot"></div>
+  <span id="status-text">正在连接 Supabase 数据库...</span>
+</div>
+
+<!-- 统计卡片 -->
+<div class="stats-row" id="stats-row">
+  <div class="stat-card">
+    <div class="stat-num" id="stat-total">—</div>
+    <div class="stat-label">回复总数</div>
+  </div>
+  <div class="stat-card green">
+    <div class="stat-num" id="stat-yes">—</div>
+    <div class="stat-label">确认出席</div>
+  </div>
+  <div class="stat-card red">
+    <div class="stat-num" id="stat-no">—</div>
+    <div class="stat-label">遗憾缺席</div>
+  </div>
+  <div class="stat-card blue">
+    <div class="stat-num" id="stat-people">—</div>
+    <div class="stat-label">出席总人数</div>
+  </div>
+</div>
+
+<!-- 工具栏 -->
+<div class="toolbar">
+  <h2 id="table-title">宾客回执列表</h2>
+  <div style="display:flex;gap:8px;flex-wrap:wrap;">
+    <button class="btn btn-success" onclick="exportCSV()">📥 导出 CSV</button>
+    <button class="btn btn-primary" onclick="refresh()">🔄 刷新</button>
+  </div>
+</div>
+
+<div class="export-tip">
+  📌 导出的 CSV 文件可用 Excel 或 Numbers 打开，包含姓名、出席状态、人数、备注及提交时间。
+</div>
+
+<!-- 表格 -->
+<div class="table-wrap">
+  <div class="loading-state" id="loading-state">
+    <div class="spinner"></div>
+    <p>正在加载回执数据...</p>
+  </div>
+  <table id="main-table" style="display:none;">
+    <thead>
+      <tr>
+        <th style="width:40px;">#</th>
+        <th>姓名</th>
+        <th>出席状态</th>
+        <th>人数</th>
+        <th>备注</th>
+        <th>提交时间</th>
+      </tr>
+    </thead>
+    <tbody id="rsvp-tbody"></tbody>
+  </table>
+  <div class="empty-state" id="empty-state" style="display:none;">
+    <div class="icon">📭</div>
+    <p>暂无回执记录<br/>当宾客在邀请函中提交回复后，数据将自动出现在此处</p>
+  </div>
+</div>
+
+<script>
+var SUPABASE_URL = 'https://hwfewyebxdmcruqbsptv.supabase.co';
+var SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imh3ZmV3eWVieGRtY3J1cWJzcHR2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM2NTUwOTcsImV4cCI6MjA4OTIzMTA5N30.owba0w4rTVYg5dydJPUQnR54iac-klsm9DbCW6kam40';
+
+var allData = [];
+
+function refresh() {
+  document.getElementById('loading-state').style.display = 'block';
+  document.getElementById('main-table').style.display = 'none';
+  document.getElementById('empty-state').style.display = 'none';
+
+  fetch(SUPABASE_URL + '/rest/v1/rsvp?select=*&order=created_at.desc', {
+    headers: {
+      'apikey': SUPABASE_KEY,
+      'Authorization': 'Bearer ' + SUPABASE_KEY
+    }
+  })
+  .then(function(res) {
+    if (!res.ok) throw new Error('请求失败 ' + res.status);
+    return res.json();
+  })
+  .then(function(data) {
+    allData = data;
+    setStatus(true, '已连接 · 数据实时来自 Supabase 云数据库');
+    renderStats(data);
+    renderTable(data);
+  })
+  .catch(function(err) {
+    setStatus(false, '连接失败：' + err.message);
+    document.getElementById('loading-state').style.display = 'none';
+    document.getElementById('empty-state').style.display = 'block';
+  });
+}
+
+function setStatus(ok, msg) {
+  document.getElementById('status-dot').className = 'status-dot' + (ok ? '' : ' error');
+  document.getElementById('status-text').textContent = msg;
+  document.getElementById('status-bar').style.background = ok ? '#e8f4fd' : '#fdecea';
+  document.getElementById('status-bar').style.borderLeftColor = ok ? '#2980b9' : '#e74c3c';
+  document.getElementById('status-bar').style.color = ok ? '#1a6694' : '#c0392b';
+}
+
+function renderStats(list) {
+  var yes = list.filter(function(r){ return r.attend === 'yes'; });
+  var no  = list.filter(function(r){ return r.attend === 'no'; });
+  var people = yes.reduce(function(acc, r){ return acc + (parseInt(r.count) || 0); }, 0);
+  document.getElementById('stat-total').textContent  = list.length;
+  document.getElementById('stat-yes').textContent    = yes.length;
+  document.getElementById('stat-no').textContent     = no.length;
+  document.getElementById('stat-people').textContent = people;
+  document.getElementById('table-title').textContent =
+    '宾客回执列表（共 ' + list.length + ' 条）';
+}
+
+function renderTable(list) {
+  var loading = document.getElementById('loading-state');
+  var table   = document.getElementById('main-table');
+  var empty   = document.getElementById('empty-state');
+  var tbody   = document.getElementById('rsvp-tbody');
+
+  loading.style.display = 'none';
+
+  if (list.length === 0) {
+    table.style.display = 'none';
+    empty.style.display = 'block';
+    return;
+  }
+
+  table.style.display = 'table';
+  empty.style.display = 'none';
+
+  tbody.innerHTML = list.map(function(r, i) {
+    var badge = r.attend === 'yes'
+      ? '<span class="badge badge-yes">✅ 出席</span>'
+      : '<span class="badge badge-no">😔 缺席</span>';
+    var count = r.attend === 'yes' ? (r.count || 1) + ' 人' : '—';
+    var timeStr = r.created_at
+      ? new Date(r.created_at).toLocaleString('zh-CN', {timeZone:'Asia/Shanghai'})
+      : '—';
+    return '<tr>' +
+      '<td style="color:#bbb;font-size:0.8rem;">' + (i + 1) + '</td>' +
+      '<td><strong>' + esc(r.name) + '</strong></td>' +
+      '<td>' + badge + '</td>' +
+      '<td>' + count + '</td>' +
+      '<td style="color:#888;max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + esc(r.note || '—') + '</td>' +
+      '<td style="color:#aaa;font-size:0.8rem;white-space:nowrap;">' + esc(timeStr) + '</td>' +
+      '</tr>';
+  }).join('');
+}
+
+function esc(str) {
+  return String(str)
+    .replace(/&/g,'&amp;')
+    .replace(/</g,'&lt;')
+    .replace(/>/g,'&gt;')
+    .replace(/"/g,'&quot;');
+}
+
+function exportCSV() {
+  if (allData.length === 0) { alert('暂无数据可导出'); return; }
+  var header = ['姓名','出席状态','人数','备注','提交时间'];
+  var rows = allData.map(function(r) {
+    var timeStr = r.created_at
+      ? new Date(r.created_at).toLocaleString('zh-CN', {timeZone:'Asia/Shanghai'})
+      : '';
+    return [
+      '"' + (r.name || '') + '"',
+      r.attend === 'yes' ? '出席' : '缺席',
+      r.attend === 'yes' ? (r.count || 1) : 0,
+      '"' + (r.note || '') + '"',
+      '"' + timeStr + '"'
+    ].join(',');
+  });
+  var csv = '\uFEFF' + header.join(',') + '\n' + rows.join('\n');
+  var blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+  var url  = URL.createObjectURL(blob);
+  var a = document.createElement('a');
+  a.href = url;
+  a.download = '寿宴回执名单_' + new Date().toLocaleDateString('zh-CN').replace(/\//g,'-') + '.csv';
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+// 初始化
+refresh();
+
+// 每60秒自动刷新
+setInterval(refresh, 60000);
+</script>
+
+</body>
+</html>
